@@ -4,36 +4,39 @@ export let defaultVSText = `
     attribute vec4 vertPosition;
     attribute vec4 aNorm;
     
+    varying vec4 lightDir;
     varying vec4 normal;
-    varying vec4 worldPos;
  
+    uniform vec4 lightPosition;
     uniform mat4 mWorld;
     uniform mat4 mView;
     uniform mat4 mProj;
 
     void main () {
-        vec4 world = mWorld * vertPosition;
-        gl_Position = mProj * mView * world;
+        gl_Position = mProj * mView * mWorld * vertPosition;
         
+        vec4 world = mWorld * vertPosition;
+        lightDir = lightPosition - world;
         normal = mWorld * aNorm;
-        worldPos = world;
     }
 `;
 
 export let defaultFSText = `
     precision mediump float;
 
+    varying vec4 lightDir;
     varying vec4 normal;
-    varying vec4 worldPos;
-	
-    uniform vec4 lightPosition;
     
     void main () {
         vec3 n = normalize(normal.xyz);
-        vec3 l = normalize(lightPosition.xyz - worldPos.xyz);
+        vec3 l = normalize(lightDir.xyz);
+        
         float diffuse = max(dot(n, l), 0.0);
         vec3 baseColor = abs(n);
-        vec3 color = baseColor * (0.2 + 0.8 * diffuse);
+        
+        // Pure Lambertian diffuse, 0.0 ambient offset
+        vec3 color = baseColor * diffuse;
+        
         gl_FragColor = vec4(color, 1.0);
     }
 `;
