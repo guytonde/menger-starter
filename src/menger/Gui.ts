@@ -126,9 +126,35 @@ export class GUI implements IGUI {
    * @param mouse
    */
   public drag(mouse: MouseEvent): void {
-	  
-	  // TODO: Your code here for left and right mouse drag
-	  
+    if (!this.dragging) {
+      return;
+    }
+
+    const dx = mouse.screenX - this.prevX;
+    const dy = mouse.screenY - this.prevY;
+
+    this.prevX = mouse.screenX;
+    this.prevY = mouse.screenY;
+
+    if ((mouse.buttons & 1) === 0) {
+      return;
+    }
+
+    if (dx === 0 && dy === 0) {
+      return;
+    }
+
+    const dragDir = this.camera
+      .right()
+      .scale(dx)
+      .add(this.camera.up().scale(-dy));
+    const lookDir = this.camera.forward().negate();
+    const axis = Vec3.cross(lookDir, dragDir);
+    if (axis.length() === 0) {
+      return;
+    }
+
+    this.camera.rotate(axis, GUI.rotationSpeed);
   }
 
   /**
@@ -154,59 +180,66 @@ export class GUI implements IGUI {
        We can use KeyDown due to auto repeating.
      */
 
-	// TOOD: Your code for key handling
+    if (
+      key.code === "ArrowLeft" ||
+      key.code === "ArrowRight" ||
+      key.code === "ArrowUp" ||
+      key.code === "ArrowDown"
+    ) {
+      key.preventDefault();
+    }
 
     switch (key.code) {
       case "KeyW": {
-
+        this.camera.offset(this.camera.forward(), -GUI.zoomSpeed, true);
         break;
       }
       case "KeyA": {
-
+        this.camera.offset(this.camera.right(), -GUI.panSpeed, true);
         break;
       }
       case "KeyS": {
-
+        this.camera.offset(this.camera.forward(), GUI.zoomSpeed, true);
         break;
       }
       case "KeyD": {
-
+        this.camera.offset(this.camera.right(), GUI.panSpeed, true);
         break;
       }
       case "KeyR": {
-
+        this.reset();
         break;
       }
       case "ArrowLeft": {
-
+        this.camera.roll(GUI.rollSpeed);
         break;
       }
       case "ArrowRight": {
-
+        this.camera.roll(GUI.rollSpeed, true);
         break;
       }
       case "ArrowUp": {
-
+        this.camera.offset(this.camera.up(), GUI.panSpeed, true);
         break;
       }
       case "ArrowDown": {
-
+        this.camera.offset(this.camera.up(), -GUI.panSpeed, true);
         break;
       }
       case "Digit1": {
-
+        this.sponge.setLevel(1);
         break;
       }
       case "Digit2": {
-
+        this.sponge.setLevel(2);
         break;
       }
       case "Digit3": {
-
+        this.sponge.setLevel(3);
         break;
       }
       case "Digit4": {
-
+        this.sponge.setLevel(4);
         break;
       }
       default: {

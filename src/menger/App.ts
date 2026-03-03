@@ -49,7 +49,26 @@ export class MengerAnimation extends CanvasAnimation {
   private lightPosition: Vec4 = new Vec4();
   private backgroundColor: Vec4 = new Vec4();
 
-  // TODO: data structures for the floor
+  /* Floor Rendering Info */
+  private floorVAO: WebGLVertexArrayObjectOES = -1;
+  private floorProgram: WebGLProgram = -1;
+
+  /* Floor Buffers */
+  private floorPosBuffer: WebGLBuffer = -1;
+  private floorIndexBuffer: WebGLBuffer = -1;
+  private floorNormBuffer: WebGLBuffer = -1;
+
+  /* Floor Attribute Locations */
+  private floorPosAttribLoc: GLint = -1;
+  private floorNormAttribLoc: GLint = -1;
+
+  /* Floor Uniform Locations */
+  private floorWorldUniformLocation: WebGLUniformLocation = -1;
+  private floorViewUniformLocation: WebGLUniformLocation = -1;
+  private floorProjUniformLocation: WebGLUniformLocation = -1;
+  private floorLightUniformLocation: WebGLUniformLocation = -1;
+
+  private floorIndexCount: number = 0;
 
 
   constructor(canvas: HTMLCanvasElement) {
@@ -152,7 +171,7 @@ export class MengerAnimation extends CanvasAnimation {
     );
 
     /* End VAO recording */
-    this.extVAO.bindVertexArrayOES(this.mengerVAO);
+    this.extVAO.bindVertexArrayOES(null);
 
     /* Get uniform locations */
     this.mengerWorldUniformLocation = gl.getUniformLocation(
@@ -195,8 +214,102 @@ export class MengerAnimation extends CanvasAnimation {
    * Sets up the floor and floor drawing
    */
   public initFloor(): void {
-      
-      // TODO: your code to set up the floor rendering
+    const gl: WebGLRenderingContext = this.ctx;
+    const floorY = -2.0;
+    const floorExtent = 200.0;
+
+    const floorPositions = new Float32Array([
+      0.0, floorY, 0.0, 1.0,
+      floorExtent, floorY, -floorExtent, 1.0,
+      floorExtent, floorY, floorExtent, 1.0,
+      -floorExtent, floorY, floorExtent, 1.0,
+      -floorExtent, floorY, -floorExtent, 1.0
+    ]);
+
+    const floorNormals = new Float32Array([
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0
+    ]);
+
+    const floorIndices = new Uint32Array([0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 1, 4]);
+    this.floorIndexCount = floorIndices.length;
+
+    this.floorProgram = WebGLUtilities.createProgram(gl, floorVSText, floorFSText);
+    gl.useProgram(this.floorProgram);
+
+    this.floorVAO = this.extVAO.createVertexArrayOES() as WebGLVertexArrayObjectOES;
+    this.extVAO.bindVertexArrayOES(this.floorVAO);
+
+    this.floorPosAttribLoc = gl.getAttribLocation(this.floorProgram, "vertPosition");
+    this.floorPosBuffer = gl.createBuffer() as WebGLBuffer;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.floorPosBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, floorPositions, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(
+      this.floorPosAttribLoc,
+      4,
+      gl.FLOAT,
+      false,
+      4 * Float32Array.BYTES_PER_ELEMENT,
+      0
+    );
+    gl.enableVertexAttribArray(this.floorPosAttribLoc);
+
+    this.floorNormAttribLoc = gl.getAttribLocation(this.floorProgram, "aNorm");
+    this.floorNormBuffer = gl.createBuffer() as WebGLBuffer;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.floorNormBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, floorNormals, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(
+      this.floorNormAttribLoc,
+      4,
+      gl.FLOAT,
+      false,
+      4 * Float32Array.BYTES_PER_ELEMENT,
+      0
+    );
+    gl.enableVertexAttribArray(this.floorNormAttribLoc);
+
+    this.floorIndexBuffer = gl.createBuffer() as WebGLBuffer;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.floorIndexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, floorIndices, gl.STATIC_DRAW);
+
+    this.floorWorldUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "mWorld"
+    ) as WebGLUniformLocation;
+    this.floorViewUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "mView"
+    ) as WebGLUniformLocation;
+    this.floorProjUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "mProj"
+    ) as WebGLUniformLocation;
+    this.floorLightUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "lightPosition"
+    ) as WebGLUniformLocation;
+
+    gl.uniformMatrix4fv(
+      this.floorWorldUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all())
+    );
+    gl.uniformMatrix4fv(
+      this.floorViewUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all())
+    );
+    gl.uniformMatrix4fv(
+      this.floorProjUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all())
+    );
+    gl.uniform4fv(this.floorLightUniformLocation, this.lightPosition.xyzw);
+
+    this.extVAO.bindVertexArrayOES(null);
   }
 
   /**
@@ -278,9 +391,6 @@ export class MengerAnimation extends CanvasAnimation {
       new Float32Array(this.gui.projMatrix().all())
     );
 	
-	console.log("Drawing ", this.sponge.indicesFlat().length, " triangles");
-
-
     /* Draw menger */
     gl.drawElements(
       gl.TRIANGLES,
@@ -289,7 +399,27 @@ export class MengerAnimation extends CanvasAnimation {
       0
     );
 
-    // TODO: draw the floor
+    gl.useProgram(this.floorProgram);
+    this.extVAO.bindVertexArrayOES(this.floorVAO);
+
+    gl.uniformMatrix4fv(
+      this.floorWorldUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all())
+    );
+    gl.uniformMatrix4fv(
+      this.floorViewUniformLocation,
+      false,
+      new Float32Array(this.gui.viewMatrix().all())
+    );
+    gl.uniformMatrix4fv(
+      this.floorProjUniformLocation,
+      false,
+      new Float32Array(this.gui.projMatrix().all())
+    );
+    gl.uniform4fv(this.floorLightUniformLocation, this.lightPosition.xyzw);
+
+    gl.drawElements(gl.TRIANGLES, this.floorIndexCount, gl.UNSIGNED_INT, 0);
     
   }
 
