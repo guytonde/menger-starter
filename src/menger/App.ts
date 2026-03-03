@@ -216,7 +216,7 @@ export class MengerAnimation extends CanvasAnimation {
   public initFloor(): void {
     const gl: WebGLRenderingContext = this.ctx;
     const floorY = -2.0;
-    const floorExtent = 200.0;
+    const floorExtent = 2000.0;
 
     const floorPositions = new Float32Array([
       0.0, floorY, 0.0, 1.0,

@@ -16,9 +16,9 @@ interface IMengerSponge {
 export class MengerSponge implements IMengerSponge {
   private dirty: boolean = true;
   private level: number = 1;
-  private positions: Float32Array = new Float32Array();
-  private indices: Uint32Array = new Uint32Array();
-  private normals: Float32Array = new Float32Array();
+  private positions: Float32Array = new Float32Array(0);
+  private indices: Uint32Array = new Uint32Array(0);
+  private normals: Float32Array = new Float32Array(0);
   private readonly modelMatrix: Mat4 = new Mat4().setIdentity();
   
   constructor(level: number) {
@@ -29,15 +29,14 @@ export class MengerSponge implements IMengerSponge {
    * Returns true if the sponge has changed.
    */
   public isDirty(): boolean {
-       return this.dirty;
+    return this.dirty;
   }
 
   public setClean(): void {
     this.dirty = false;
   }
   
-  public setLevel(level: number)
-  {
+  public setLevel(level: number) : void {
     const nextLevel = Math.max(1, Math.min(4, Math.floor(level)));
     this.level = nextLevel;
     this.rebuildGeometry();
