@@ -89,3 +89,41 @@ export let floorFSText = `
         gl_FragColor = vec4(color, 1.0);
     }
 `;
+
+export let shadowVSText = `
+    precision highp float;
+
+    attribute vec4 vertPosition;
+
+    uniform vec4 lightPosition;
+    uniform mat4 mWorld;
+    uniform mat4 mView;
+    uniform mat4 mProj;
+    uniform float planeY;
+    uniform float shadowOffset;
+
+    void main () {
+        vec4 world = mWorld * vertPosition;
+        float denom = world.y - lightPosition.y;
+
+        if (abs(denom) < 0.0001) {
+            denom = denom < 0.0 ? -0.0001 : 0.0001;
+        }
+
+        float t = (planeY - lightPosition.y) / denom;
+        vec3 projected = lightPosition.xyz + t * (world.xyz - lightPosition.xyz);
+        projected.y += shadowOffset;
+
+        gl_Position = mProj * mView * vec4(projected, 1.0);
+    }
+`;
+
+export let shadowFSText = `
+    precision mediump float;
+
+    uniform float shadowOpacity;
+
+    void main () {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, shadowOpacity);
+    }
+`;

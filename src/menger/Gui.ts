@@ -242,6 +242,13 @@ export class GUI implements IGUI {
         this.sponge.setLevel(4);
         break;
       }
+      case "KeyH": {
+        const animation = this.animation as unknown as { toggleShadows?: () => void };
+        if (animation.toggleShadows) {
+          animation.toggleShadows();
+        }
+        break;
+      }
       default: {
         console.log("Key : '", key.code, "' was pressed.");
         break;
